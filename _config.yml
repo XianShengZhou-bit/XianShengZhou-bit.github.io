@@ -103,4 +103,4 @@ theme: landscape
 deploy:
   type: git
   repo: git@github.com:XianShengZhou-bit/XianShengZhou-bit.github.io.git
-  branch: main
+  branch: gh-pages
