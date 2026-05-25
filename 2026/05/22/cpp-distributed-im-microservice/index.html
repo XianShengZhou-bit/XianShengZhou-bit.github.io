@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>基于 C++ 构建高可用分布式 IM 微服务系统 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="在海量用户的高并发社交场景下，即时通讯（IM）系统对吞吐量、长连接维持以及消息低延迟有着近乎苛刻的要求。本项目设计并实现了一套基于 C++17 的微服务分布式 IM 后端架构，支持多端登录、消息异步解耦、分布式会话及多维检索。 本文将从领域划分、核心难点攻坚、极限性能压测出发，深度解构该系统的底层运行机理。 一、 系统分布式架构与领域解耦本项目服务端丢弃了臃肿的单体设计，采用物理隔离的微服务架构，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于 C++ 构建高可用分布式 IM 微服务系统">
+<meta property="og:url" content="http://example.com/2026/05/22/cpp-distributed-im-microservice/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="在海量用户的高并发社交场景下，即时通讯（IM）系统对吞吐量、长连接维持以及消息低延迟有着近乎苛刻的要求。本项目设计并实现了一套基于 C++17 的微服务分布式 IM 后端架构，支持多端登录、消息异步解耦、分布式会话及多维检索。 本文将从领域划分、核心难点攻坚、极限性能压测出发，深度解构该系统的底层运行机理。 一、 系统分布式架构与领域解耦本项目服务端丢弃了臃肿的单体设计，采用物理隔离的微服务架构，">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-05-22T23:30:00.000Z">
+<meta property="article:modified_time" content="2026-05-25T12:08:24.612Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="微服务">
+<meta property="article:tag" content="高并发">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-cpp-distributed-im-microservice" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/05/22/cpp-distributed-im-microservice/" class="article-date">
+  <time class="dt-published" datetime="2026-05-22T23:30:00.000Z" itemprop="datePublished">2026-05-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/">架构设计与分布式系统</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      基于 C++ 构建高可用分布式 IM 微服务系统
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>在海量用户的高并发社交场景下，即时通讯（IM）系统对吞吐量、长连接维持以及消息低延迟有着近乎苛刻的要求。本项目设计并实现了一套基于 C++17 的微服务分布式 IM 后端架构，支持多端登录、消息异步解耦、分布式会话及多维检索。</p>
+<p>本文将从领域划分、核心难点攻坚、极限性能压测出发，深度解构该系统的底层运行机理。</p>
+<h2 id="一、-系统分布式架构与领域解耦"><a href="#一、-系统分布式架构与领域解耦" class="headerlink" title="一、 系统分布式架构与领域解耦"></a>一、 系统分布式架构与领域解耦</h2><p>本项目服务端丢弃了臃肿的单体设计，采用物理隔离的微服务架构，拆分为 7 个核心子服务。各子服务基于 <code>brpc</code> 框架进行高性能跨进程通信。</p>
+<h3 id="1-业务域边界划分"><a href="#1-业务域边界划分" class="headerlink" title="1. 业务域边界划分"></a>1. 业务域边界划分</h3><ul>
+<li><strong>网关管理子服务 (Gateway Server)</strong>：作为外部流量的唯一接入层，基于 <code>cpp-httplib</code> 承接 HTTP 请求，并集成 <code>websocketpp</code> 维持客户端长连接。负责长短协议转换、Token 鉴权、Session 分布式路由管理。</li>
+<li><strong>用户管理子服务 (User Server)</strong>：负责用户注册、登录态判定、基于 SMTPS 协议的邮箱多路换绑鉴权，以及用户元数据的统一维护。</li>
+<li><strong>好友管理子服务 (Friend Server)</strong>：维护分布式社交图谱，处理好友添加申请流、黑名单隔离、以及单聊&#x2F;群聊聊天会话的元数据构建。</li>
+<li><strong>消息存储子服务 (Message Server)</strong>：负责消息的拉取（历史&#x2F;漫游消息），以及消息落地存储的持久化分流。</li>
+<li><strong>消息转发子服务 (Transmit Server)</strong>：负责消息的动态路由解析，实时获取群组全量在线用户的拓扑节点列表。</li>
+<li><strong>文件存储子服务 (File Server)</strong>：非文本消息（图片、语音文件、离线文件）的微服务化存取中心，基于 ODB 维护文件哈希与物理路径映射。</li>
+<li><strong>语音识别子服务 (Speech Server)</strong>：封装百度语音识别 C++ SDK，提供 PCM 音频流到文本的流式计算接口。</li>
+</ul>
+<h3 id="2-基础设施组件矩阵"><a href="#2-基础设施组件矩阵" class="headerlink" title="2. 基础设施组件矩阵"></a>2. 基础设施组件矩阵</h3><ul>
+<li><strong>服务发现与注册</strong>：<code>etcd</code> </li>
+<li><strong>高性能通信</strong>：<code>brpc</code></li>
+<li><strong>存储与数据持久化</strong>：<code>MySQL 8.0</code> (利用 <code>ODB</code> 实现编译期 ORM 优化)</li>
+<li><strong>缓存与状态机</strong>：<code>Redis</code> (维护分布式 Session 与全量在线状态)</li>
+<li><strong>全文检索引擎</strong>：<code>ElasticSearch</code> (处理用户模糊搜索与消息级全文检索)</li>
+<li><strong>消息队列中间件</strong>：<code>RabbitMQ</code> (构建 Direct 交换机实现消息写扩散异步解耦)</li>
+</ul>
+<hr>
+<h2 id="二、-核心架构设计与工程难点突破"><a href="#二、-核心架构设计与工程难点突破" class="headerlink" title="二、 核心架构设计与工程难点突破"></a>二、 核心架构设计与工程难点突破</h2><h3 id="1-基于-etcd-的动态注册发现与客户端软负载均衡"><a href="#1-基于-etcd-的动态注册发现与客户端软负载均衡" class="headerlink" title="1. 基于 etcd 的动态注册发现与客户端软负载均衡"></a>1. 基于 etcd 的动态注册发现与客户端软负载均衡</h3><p>在分布式集群中，微服务节点的瞬时上下线极为高频。系统基于 <code>etcd</code> 的 Lease 租约与 Watch 监听机制，实现了毫秒级的拓扑感知。</p>
+<ul>
+<li><strong>封装逻辑</strong>：调用端封装了统一的 <code>ServiceManager</code> 与 <code>ServiceChannel</code>。在服务发现初始化时，通过 <code>Discovery</code> 类调用 <code>etcd::Client::ls</code> 漏斗式拉取全量存活节点，并瞬间挂载 <code>etcd::Watcher</code>。</li>
+<li><strong>软负载均衡实现</strong>：当远端实例触发 <code>PUT</code>（上线）或 <code>DELETE</code>（下线）事件时，Watcher 线程异步唤醒回调，在本地 <code>std::vector&lt;ChannelPtr&gt;</code> 中动态追加或剔除指针。应用层发起 RPC 调用时，通过原子计数器 <code>_index++</code> 配合 Round-Robin（轮询）策略获取 <code>brpc::Channel</code>，在客户端平滑卸任流量，彻底消除了服务端单点负载过高的隐患。</li>
+</ul>
+<h3 id="2-消息吞吐护城河：RabbitMQ-异步削峰与写扩散优化"><a href="#2-消息吞吐护城河：RabbitMQ-异步削峰与写扩散优化" class="headerlink" title="2. 消息吞吐护城河：RabbitMQ 异步削峰与写扩散优化"></a>2. 消息吞吐护城河：RabbitMQ 异步削峰与写扩散优化</h3><p>群聊消息的“写扩散”是击穿数据库的核心诱因。如果一个千人群内每人高频发信，同步写库将直接导致物理磁盘 IO 队列被打满。</p>
+<ul>
+<li><strong>执行链解耦</strong>：当 Transmit 服务接收到新消息请求后，仅在内存中通过 <code>ServiceManager</code> 向用户子服务拉取群成员 ID 列表，随后立即将消息体进行二进制 Protobuf 序列化，调用 <code>Publish</code> 接口将数据投递至 RabbitMQ 的持久化交换机中。</li>
+<li><strong>异步落地链路</strong>：Message 服务作为集群消费者，以空闲驱动的平滑速率拉取消息。根据数据特征进行多维异构分流：文本消息直接送入 ElasticSearch 构建倒排索引用于秒级全文检索；非文本消息调用文件子服务生成 UUID 物理文件名存储，而消息元数据则最终写入 MySQL，成功将物理 IO 与核心业务解耦。</li>
+</ul>
+<h3 id="3-websocketpp-会话保持与多端分布式通知"><a href="#3-websocketpp-会话保持与多端分布式通知" class="headerlink" title="3. websocketpp 会话保持与多端分布式通知"></a>3. websocketpp 会话保持与多端分布式通知</h3><p>为了改变传统 HTTP 协议无法由服务端主动触达客户端的致命缺陷，网关层集成了高并发 WebSocket 协议。</p>
+<ul>
+<li><strong>线程安全容器</strong>：网关内存中维护了 <code>_uids_connection</code> 和 <code>_connection_client</code> 两个高并发安全的 <code>std::unordered_map</code>，通过 <code>std::unique_lock&lt;std::mutex&gt;</code> 保证连接建立（Insert）与释放（Remove）时的线程安全。</li>
+<li><strong>多端一致性</strong>：用户在群聊创建或收到私聊消息时，Transmit 服务通过 RPC 返回的在线用户列表，直接索引到对应的长连接 <code>connection_ptr</code>，调用 <code>send</code> 接口秒级推送 <code>NotifyMessage</code> 结构体。若 Redis 判定用户当前离线，则信令转为离线缓存，等下次登录时触发增量同步。</li>
+</ul>
+<hr>
+<h2 id="三、-极限压力测试与系统性能指标"><a href="#三、-极限压力测试与系统性能指标" class="headerlink" title="三、 极限压力测试与系统性能指标"></a>三、 极限压力测试与系统性能指标</h2><p>为了验证分布式架构的承载能力，项目团队在内网环境中搭建了分布式压测集群，使用自研的 brpc 模拟客户端及分布式压测工具进行了极限性能压测。</p>
+<h3 id="1-压测环境拓扑"><a href="#1-压测环境拓扑" class="headerlink" title="1. 压测环境拓扑"></a>1. 压测环境拓扑</h3><ul>
+<li><strong>测试服务器</strong>：3台 虚拟机 (Ubuntu 22.04，8核 CPU，16GB 内存，千兆网卡)。</li>
+</ul>
+<h3 id="2-核心压测数据指标"><a href="#2-核心压测数据指标" class="headerlink" title="2. 核心压测数据指标"></a>2. 核心压测数据指标</h3><p>通过持续 12 小时的极限压力注入，系统表现出极佳的稳定性：</p>
+<ul>
+<li><strong>长连接维持能力</strong>：长连接网关单机成功维持 <strong>100,000</strong> 个并发 WebSocket 活跃长连接，此时系统内存占用稳定在 6.2GB 左右，CPU 利用率保持在 25% 的低位，得益于底层事件驱动（Epoll）模型的轻量化特性。</li>
+<li><strong>消息吞吐量 (TPS)</strong>：在全量单聊&#x2F;群聊混合发送的极端场景下，系统的消息并发投递 TPS 峰值达到了 <strong>24,500 次&#x2F;秒</strong>。</li>
+<li><strong>消息时延 (Latency)</strong>：从客户端 A 发出消息，经网关、Transmit 投递队列、到客户端 B 收到弹窗通知，全链路端到端平均延迟控制在 <strong>18ms</strong> 以内，99% 的请求时延（P99）小于 <strong>35ms</strong>。</li>
+<li><strong>高可用表现</strong>：当强行 Kill 掉 3 台 User 服务中的 1 台时，etcd 在 400ms 内完成拓扑刷新，网关层 brpc 触发自动重试，业务层实现完全<strong>零报错、零丢包</strong>感知的无缝平滑切换。</li>
+</ul>
+<h3 id="3-压测前置调优"><a href="#3-压测前置调优" class="headerlink" title="3. 压测前置调优"></a>3. 压测前置调优</h3><p>为突破 Linux 默认的文件描述符与 TCP 栈限制，压测前对网关服务器及压测机的 <code>/etc/sysctl.conf</code> 进行了核心参数调优：</p>
+<ul>
+<li><code>fs.file-max = 1000000</code> (解除最大文件句柄限制)</li>
+<li><code>net.ipv4.ip_local_port_range = 1024 65535</code> (扩充压测机的可用端口范围)</li>
+<li><code>net.ipv4.tcp_tw_reuse = 1</code> (开启 TIME_WAIT 快速复用，防止压测端端口耗尽)</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/05/22/cpp-distributed-im-microservice/" data-id="cuidazVvbiJhZsDp65JHi1cJ6" data-title="基于 C++ 构建高可用分布式 IM 微服务系统" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/C/" rel="tag">C++</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2026/05/23/cpp-muduo-rpc-microservice-framework/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          从零构建 C++ 分布式 RPC 框架：基于 Muduo 的微服务与 Pub/Sub 架构实战
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2026/05/22/mysql-innodb-btree-and-mvcc/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">深入剖析 MySQL 底层架构：从 B+ 树索引到 InnoDB MVCC 并发控制</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86%E4%B8%8E%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">底层原理与架构设计</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E6%9C%AF%E5%BA%95%E5%B1%82%E6%B7%B1%E5%BA%A6%E5%89%96%E6%9E%90/">技术底层深度剖析</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E6%9C%AF%E5%BA%95%E5%B1%82%E6%B7%B1%E5%BA%A6%E5%89%96%E6%9E%90/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8E%E4%B8%AD%E9%97%B4%E4%BB%B6/">数据库与中间件</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/">架构设计与分布式系统</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E4%B8%8E%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/">网络与底层原理</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/C/" rel="tag">C++</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Elasticsearch/" rel="tag">Elasticsearch</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS/" rel="tag">HTTPS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/InnoDB/" rel="tag">InnoDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Muduo/" rel="tag">Muduo</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RPC/" rel="tag">RPC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/" rel="tag">加密算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%9F%BA%E7%A1%80%E6%9E%B6%E6%9E%84/" rel="tag">基础架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84/" rel="tag">安全架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" rel="tag">并发控制</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag">并发编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/" rel="tag">底层原理</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84/" rel="tag">数据库架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag">计算机网络</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%9D%A2%E8%AF%95%E7%AA%81%E5%87%BB/" rel="tag">面试突击</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/C/" style="font-size: 20px;">C++</a> <a href="/tags/Elasticsearch/" style="font-size: 10px;">Elasticsearch</a> <a href="/tags/HTTPS/" style="font-size: 10px;">HTTPS</a> <a href="/tags/InnoDB/" style="font-size: 10px;">InnoDB</a> <a href="/tags/Muduo/" style="font-size: 10px;">Muduo</a> <a href="/tags/MySQL/" style="font-size: 20px;">MySQL</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/SQL/" style="font-size: 10px;">SQL</a> <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" style="font-size: 10px;">分布式系统</a> <a href="/tags/%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/" style="font-size: 10px;">加密算法</a> <a href="/tags/%E5%9F%BA%E7%A1%80%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">基础架构</a> <a href="/tags/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">安全架构</a> <a href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">并发控制</a> <a href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并发编程</a> <a href="/tags/%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/" style="font-size: 10px;">底层原理</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 20px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">数据库架构</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 20px;">架构设计</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">计算机网络</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 10px;">设计模式</a> <a href="/tags/%E9%9D%A2%E8%AF%95%E7%AA%81%E5%87%BB/" style="font-size: 10px;">面试突击</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/05/">May 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/05/24/mysql-core-concepts-and-advanced-queries-guide/">夯实后端基石：MySQL 核心约束、进阶查询与底层架构</a>
+          </li>
+        
+          <li>
+            <a href="/2026/05/23/redis-deletion-strategy-and-threading-model/">Redis 底层架构解密：从惰性删除到 6.0 多线程 I/O 模型的演进史</a>
+          </li>
+        
+          <li>
+            <a href="/2026/05/23/https-tls-handshake-and-ca-certificate/">网络安全基石：深入浅出 HTTPS 核心原理与 TLS 握手机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/05/23/cpp-muduo-rpc-microservice-framework/">从零构建 C++ 分布式 RPC 框架：基于 Muduo 的微服务与 Pub/Sub 架构实战</a>
+          </li>
+        
+          <li>
+            <a href="/2026/05/22/cpp-distributed-im-microservice/">基于 C++ 构建高可用分布式 IM 微服务系统</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

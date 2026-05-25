@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>从零构建 C++ 分布式 RPC 框架：基于 Muduo 的微服务与 Pub/Sub 架构实战 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="在分布式后端研发体系中，构建高可用、可扩展的通信基座是微服务架构的核心命题。本项目基于 C++17 与 muduo 高性能网络库，设计并实现了一套支持同步&#x2F;异步 RPC 调用、服务治理（注册与发现）以及消息发布订阅（Pub&#x2F;Sub）的轻量级微服务框架。 本文将系统剖析该框架的分层架构、核心自定义协议设计、服务流转机制，以及在多线程高并发场景下的工程治理与容错实践。 一、 系统核">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从零构建 C++ 分布式 RPC 框架：基于 Muduo 的微服务与 Pub&#x2F;Sub 架构实战">
+<meta property="og:url" content="http://example.com/2026/05/23/cpp-muduo-rpc-microservice-framework/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="在分布式后端研发体系中，构建高可用、可扩展的通信基座是微服务架构的核心命题。本项目基于 C++17 与 muduo 高性能网络库，设计并实现了一套支持同步&#x2F;异步 RPC 调用、服务治理（注册与发现）以及消息发布订阅（Pub&#x2F;Sub）的轻量级微服务框架。 本文将系统剖析该框架的分层架构、核心自定义协议设计、服务流转机制，以及在多线程高并发场景下的工程治理与容错实践。 一、 系统核">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-05-23T10:10:00.000Z">
+<meta property="article:modified_time" content="2026-05-25T12:08:24.612Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="Muduo">
+<meta property="article:tag" content="RPC">
+<meta property="article:tag" content="微服务">
+<meta property="article:tag" content="设计模式">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-cpp-muduo-rpc-microservice-framework" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/05/23/cpp-muduo-rpc-microservice-framework/" class="article-date">
+  <time class="dt-published" datetime="2026-05-23T10:10:00.000Z" itemprop="datePublished">2026-05-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86%E4%B8%8E%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">底层原理与架构设计</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      从零构建 C++ 分布式 RPC 框架：基于 Muduo 的微服务与 Pub/Sub 架构实战
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>在分布式后端研发体系中，构建高可用、可扩展的通信基座是微服务架构的核心命题。本项目基于 C++17 与 <code>muduo</code> 高性能网络库，设计并实现了一套支持同步&#x2F;异步 RPC 调用、服务治理（注册与发现）以及消息发布订阅（Pub&#x2F;Sub）的轻量级微服务框架。</p>
+<p>本文将系统剖析该框架的分层架构、核心自定义协议设计、服务流转机制，以及在多线程高并发场景下的工程治理与容错实践。</p>
+<h2 id="一、-系统核心架构与分层设计"><a href="#一、-系统核心架构与分层设计" class="headerlink" title="一、 系统核心架构与分层设计"></a>一、 系统核心架构与分层设计</h2><p>框架整体采用<strong>自底向上</strong>的分层架构，严格遵循控制面与数据面分离的原则，底层基于 <code>epoll</code> 边缘触发（ET）事件驱动模型保障高吞吐量。</p>
+<h3 id="1-架构三层模型"><a href="#1-架构三层模型" class="headerlink" title="1. 架构三层模型"></a>1. 架构三层模型</h3><table>
+<thead>
+<tr>
+<th align="left">架构层级</th>
+<th align="left">核心组件抽象</th>
+<th align="left">模块职责与工程实现</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>抽象层 (Interface)</strong></td>
+<td align="left"><code>BaseMessage</code>, <code>BaseServer</code>, <code>BaseConnection</code>, <code>BaseProtocol</code></td>
+<td align="left">定义网络端点、连接通道与通信协议的纯虚基类，确立系统契约。</td>
+</tr>
+<tr>
+<td align="left"><strong>实现层 (Implementation)</strong></td>
+<td align="left"><code>MuduoServer</code>, <code>LVProtocol</code>, <code>Dispatcher</code>, <code>JsonMessage</code></td>
+<td align="left">依托 Muduo 完成网络 I&#x2F;O 读写，实现基于 JSON 的序列化载体及路由分发逻辑。</td>
+</tr>
+<tr>
+<td align="left"><strong>业务层 (Business)</strong></td>
+<td align="left"><code>RpcClient</code>, <code>RegistryServer</code>, <code>TopicManager</code></td>
+<td align="left">暴露顶层 API，屏蔽底层网络细节，开发者通过 Stub&#x2F;Proxy 模式直接发起服务调用或注册回调。</td>
+</tr>
+</tbody></table>
+<h3 id="2-设计模式的工程化应用"><a href="#2-设计模式的工程化应用" class="headerlink" title="2. 设计模式的工程化应用"></a>2. 设计模式的工程化应用</h3><p>为满足工业级框架的可维护性与扩展性要求，系统底层解耦深度应用了以下设计模式：</p>
+<ul>
+<li><strong>桥接模式 (Bridge)</strong>：将网络端点的抽象接口与具体的 Muduo I&#x2F;O 实现彻底分离。该设计确保了未来可平滑替换底层网络引擎（如迁移至 ASIO 或 brpc 底层）。</li>
+<li><strong>工厂模式 (Factory)</strong>：通过 <code>MessageFactory</code> 集中管理反序列化对象的生命周期，屏蔽复杂协议类的实例化细节。</li>
+<li><strong>模板方法模式 (Template Method)</strong>：在 <code>MessageCallback</code> 中定义消息处理骨架，将具体的 <code>OnMessage</code> 纯虚执行逻辑下放至派生类，由 <code>Dispatcher</code> 完成多态路由。</li>
+<li><strong>观察者模式 (Observer)</strong>：应用于 Pub&#x2F;Sub 模块，Topic 节点作为 Subject，通过非阻塞回调机制向挂载的 <code>Subscribe</code> 订阅者列表广播数据变更事件。</li>
+</ul>
+<hr>
+<h2 id="二、-协议定制与消息序列化"><a href="#二、-协议定制与消息序列化" class="headerlink" title="二、 协议定制与消息序列化"></a>二、 协议定制与消息序列化</h2><p>针对基于 TCP 字节流传输固有的粘包与半包问题，框架自研了定长头部协议（LV, Length-Value 的工业变体），并在协议头中引入消息路由与生命周期标识。</p>
+<h3 id="1-物理报文结构"><a href="#1-物理报文结构" class="headerlink" title="1. 物理报文结构"></a>1. 物理报文结构</h3><p>网络传输中的单次完整 TCP 请求&#x2F;响应报文被严格定义为以下二进制结构：</p>
+<table>
+<thead>
+<tr>
+<th align="left">字段</th>
+<th align="left">长度 (Bytes)</th>
+<th align="left">描述 (说明)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>Total_Length</strong></td>
+<td align="left">4</td>
+<td align="left">报文总长度（解决粘包&#x2F;半包边界划分）。</td>
+</tr>
+<tr>
+<td align="left"><strong>Mtype</strong></td>
+<td align="left">4</td>
+<td align="left">报文类型枚举（区分 RPC、服务注册、Topic 动作）。</td>
+</tr>
+<tr>
+<td align="left"><strong>ID_Length</strong></td>
+<td align="left">4</td>
+<td align="left">UUID 字符串的长度。</td>
+</tr>
+<tr>
+<td align="left"><strong>UUID</strong></td>
+<td align="left">32</td>
+<td align="left">16 进制字符串（8位随机数+8字节自增序号），确保分布式全链路 Request&#x2F;Response 精准映射。</td>
+</tr>
+<tr>
+<td align="left"><strong>Body</strong></td>
+<td align="left">变长</td>
+<td align="left">序列化后的 JSON 业务负载（Value）。</td>
+</tr>
+</tbody></table>
+<h3 id="2-消息序列化载体"><a href="#2-消息序列化载体" class="headerlink" title="2. 消息序列化载体"></a>2. 消息序列化载体</h3><p>基于基类 <code>BaseMessage</code>，针对不同业务场景派生出不同的 JSON 结构体：</p>
+<ul>
+<li><strong>RpcRequestMessage</strong>：承载 <code>_method</code> (目标函数签名) 与 <code>_params</code> (入参 JSON)。</li>
+<li><strong>ServiceRequestMessage</strong>：承载服务治理动作宏 <code>_servicemtype</code>，及向 Registry 上报的 Provider 实例元数据 <code>_host</code> (IP:Port)。</li>
+<li><strong>TopicRequestMessage</strong>：承载 Pub&#x2F;Sub 原语操作宏 <code>_topicmtype</code> 及广播负载 <code>_message</code>。</li>
+</ul>
+<hr>
+<h2 id="三、-核心服务模块流转机制"><a href="#三、-核心服务模块流转机制" class="headerlink" title="三、 核心服务模块流转机制"></a>三、 核心服务模块流转机制</h2><h3 id="1-RPC-远程过程调用-Remote-Procedure-Call"><a href="#1-RPC-远程过程调用-Remote-Procedure-Call" class="headerlink" title="1. RPC 远程过程调用 (Remote Procedure Call)"></a>1. RPC 远程过程调用 (Remote Procedure Call)</h3><p><strong>执行链路：</strong></p>
+<ol>
+<li><strong>调用发起</strong>：调用端通过 <code>RpcClient::Call()</code> 发起请求，传入方法签名与回调存根（支持 Future 同步阻塞或 Callback 异步非阻塞）。<code>RpcCaller</code> 生成分布式唯一的 UUID 并封包。</li>
+<li><strong>网络路由</strong>：服务端 <code>muduo::net::Buffer</code> 接收字节流，交由 <code>LVProtocol</code> 进行边界校验与解包，随后透传至 <code>Dispatcher</code>。<code>RpcRouter</code> 基于哈希表字典索引，拉起对应的业务执行上下文。</li>
+<li><strong>闭环唤醒</strong>：服务端原路返回 <code>RpcResponse</code>。调用端网络层收到响应后，通过 <code>Requestor</code> 中的 UUID 映射表，唤醒挂起的线程或执行异步回调。</li>
+</ol>
+<h3 id="2-服务注册与动态发现-Service-Governance"><a href="#2-服务注册与动态发现-Service-Governance" class="headerlink" title="2. 服务注册与动态发现 (Service Governance)"></a>2. 服务注册与动态发现 (Service Governance)</h3><p>采用 CP 架构理念的集中式协调中心（RegistryServer）确保服务拓扑的一致性。</p>
+<ul>
+<li><strong>注册与心跳</strong>：Provider 启动时调用 <code>RegisterMethod</code> 向 Registry 写入节点元数据。Registry 维持 Provider 的长连接作为心跳依据。</li>
+<li><strong>动态发现与软负载</strong>：Consumer 发起 RPC 前查阅本地路由表。若发生 Cache Miss，则触发 <code>ServiceDiscovery</code> 向远端拉取全量 Provider 列表。调用时采用 Round-Robin (轮询) 算法进行客户端软负载均衡。</li>
+<li><strong>故障剔除</strong>：若 Provider 节点宕机或 TCP 异常断开，Muduo 底层触发 <code>OnConnection</code> 关闭回调，Registry 将立即清除脏数据，并向所有 Watch 该服务的 Consumer 广播下线通知。</li>
+</ul>
+<h3 id="3-发布订阅机制-Pub-Sub"><a href="#3-发布订阅机制-Pub-Sub" class="headerlink" title="3. 发布订阅机制 (Pub&#x2F;Sub)"></a>3. 发布订阅机制 (Pub&#x2F;Sub)</h3><p>基于内存队列实现“单点发布，多点扇出”的异步解耦模型。<br>由 <code>TopicManager</code> 全局管控 Topic 生命周期，提供四大原语语义：<code>Create</code> (初始化主题空间), <code>Subscribe</code> (注册长连接监听), <code>Publish</code> (向队列投递负载), <code>Cancel</code> (销毁资源)。</p>
+<hr>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/05/23/cpp-muduo-rpc-microservice-framework/" data-id="cuid2t2VQo5oLtDPHePgMvamp" data-title="从零构建 C++ 分布式 RPC 框架：基于 Muduo 的微服务与 Pub/Sub 架构实战" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/C/" rel="tag">C++</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Muduo/" rel="tag">Muduo</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/RPC/" rel="tag">RPC</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2026/05/23/https-tls-handshake-and-ca-certificate/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          网络安全基石：深入浅出 HTTPS 核心原理与 TLS 握手机制
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2026/05/22/cpp-distributed-im-microservice/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">基于 C++ 构建高可用分布式 IM 微服务系统</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86%E4%B8%8E%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">底层原理与架构设计</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E6%9C%AF%E5%BA%95%E5%B1%82%E6%B7%B1%E5%BA%A6%E5%89%96%E6%9E%90/">技术底层深度剖析</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E6%9C%AF%E5%BA%95%E5%B1%82%E6%B7%B1%E5%BA%A6%E5%89%96%E6%9E%90/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8E%E4%B8%AD%E9%97%B4%E4%BB%B6/">数据库与中间件</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/">架构设计与分布式系统</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E4%B8%8E%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/">网络与底层原理</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/C/" rel="tag">C++</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Elasticsearch/" rel="tag">Elasticsearch</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS/" rel="tag">HTTPS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/InnoDB/" rel="tag">InnoDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Muduo/" rel="tag">Muduo</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RPC/" rel="tag">RPC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/" rel="tag">加密算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%9F%BA%E7%A1%80%E6%9E%B6%E6%9E%84/" rel="tag">基础架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84/" rel="tag">安全架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" rel="tag">并发控制</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag">并发编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/" rel="tag">底层原理</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84/" rel="tag">数据库架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag">计算机网络</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%9D%A2%E8%AF%95%E7%AA%81%E5%87%BB/" rel="tag">面试突击</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/C/" style="font-size: 20px;">C++</a> <a href="/tags/Elasticsearch/" style="font-size: 10px;">Elasticsearch</a> <a href="/tags/HTTPS/" style="font-size: 10px;">HTTPS</a> <a href="/tags/InnoDB/" style="font-size: 10px;">InnoDB</a> <a href="/tags/Muduo/" style="font-size: 10px;">Muduo</a> <a href="/tags/MySQL/" style="font-size: 20px;">MySQL</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/SQL/" style="font-size: 10px;">SQL</a> <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" style="font-size: 10px;">分布式系统</a> <a href="/tags/%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/" style="font-size: 10px;">加密算法</a> <a href="/tags/%E5%9F%BA%E7%A1%80%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">基础架构</a> <a href="/tags/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">安全架构</a> <a href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">并发控制</a> <a href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并发编程</a> <a href="/tags/%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/" style="font-size: 10px;">底层原理</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 20px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">数据库架构</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 20px;">架构设计</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">计算机网络</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 10px;">设计模式</a> <a href="/tags/%E9%9D%A2%E8%AF%95%E7%AA%81%E5%87%BB/" style="font-size: 10px;">面试突击</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/05/">May 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/05/24/mysql-core-concepts-and-advanced-queries-guide/">夯实后端基石：MySQL 核心约束、进阶查询与底层架构</a>
+          </li>
+        
+          <li>
+            <a href="/2026/05/23/redis-deletion-strategy-and-threading-model/">Redis 底层架构解密：从惰性删除到 6.0 多线程 I/O 模型的演进史</a>
+          </li>
+        
+          <li>
+            <a href="/2026/05/23/https-tls-handshake-and-ca-certificate/">网络安全基石：深入浅出 HTTPS 核心原理与 TLS 握手机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/05/23/cpp-muduo-rpc-microservice-framework/">从零构建 C++ 分布式 RPC 框架：基于 Muduo 的微服务与 Pub/Sub 架构实战</a>
+          </li>
+        
+          <li>
+            <a href="/2026/05/22/cpp-distributed-im-microservice/">基于 C++ 构建高可用分布式 IM 微服务系统</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

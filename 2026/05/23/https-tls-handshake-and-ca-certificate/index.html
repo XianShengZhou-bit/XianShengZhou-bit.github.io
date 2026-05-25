@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>网络安全基石：深入浅出 HTTPS 核心原理与 TLS 握手机制 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="在构建现代 Web 应用时，数据传输的安全性是不可逾越的底线。从 HTTP 到 HTTPS 的演进，不仅仅是一个字母的增加，更是底层通信信任机制的全面重构。 本文将深入剥析 HTTP 与 HTTPS 的核心差异，并硬核拆解 CA 证书的签发与 TLS 握手验证的全流程。 一、 HTTP 与 HTTPS 的核心交锋在解释复杂的加密机制前，我们先直观对比两者在数据传输层面的本质区别：    特性 HT">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网络安全基石：深入浅出 HTTPS 核心原理与 TLS 握手机制">
+<meta property="og:url" content="http://example.com/2026/05/23/https-tls-handshake-and-ca-certificate/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="在构建现代 Web 应用时，数据传输的安全性是不可逾越的底线。从 HTTP 到 HTTPS 的演进，不仅仅是一个字母的增加，更是底层通信信任机制的全面重构。 本文将深入剥析 HTTP 与 HTTPS 的核心差异，并硬核拆解 CA 证书的签发与 TLS 握手验证的全流程。 一、 HTTP 与 HTTPS 的核心交锋在解释复杂的加密机制前，我们先直观对比两者在数据传输层面的本质区别：    特性 HT">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-05-23T15:30:00.000Z">
+<meta property="article:modified_time" content="2026-05-25T12:08:24.612Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="HTTPS">
+<meta property="article:tag" content="加密算法">
+<meta property="article:tag" content="安全架构">
+<meta property="article:tag" content="计算机网络">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-https-tls-handshake-and-ca-certificate" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/05/23/https-tls-handshake-and-ca-certificate/" class="article-date">
+  <time class="dt-published" datetime="2026-05-23T15:30:00.000Z" itemprop="datePublished">2026-05-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E7%BD%91%E7%BB%9C%E4%B8%8E%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/">网络与底层原理</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      网络安全基石：深入浅出 HTTPS 核心原理与 TLS 握手机制
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>在构建现代 Web 应用时，数据传输的安全性是不可逾越的底线。从 HTTP 到 HTTPS 的演进，不仅仅是一个字母的增加，更是底层通信信任机制的全面重构。</p>
+<p>本文将深入剥析 HTTP 与 HTTPS 的核心差异，并硬核拆解 CA 证书的签发与 TLS 握手验证的全流程。</p>
+<h2 id="一、-HTTP-与-HTTPS-的核心交锋"><a href="#一、-HTTP-与-HTTPS-的核心交锋" class="headerlink" title="一、 HTTP 与 HTTPS 的核心交锋"></a>一、 HTTP 与 HTTPS 的核心交锋</h2><p>在解释复杂的加密机制前，我们先直观对比两者在数据传输层面的本质区别：</p>
+<table>
+<thead>
+<tr>
+<th align="left">特性</th>
+<th align="left">HTTP</th>
+<th align="left">HTTPS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>传输形态</strong></td>
+<td align="left"><strong>明文传输</strong>。数据在网络链路中完全“裸奔”。</td>
+<td align="left"><strong>密文传输</strong>。引入 SSL&#x2F;TLS 安全层进行数据加密。</td>
+</tr>
+<tr>
+<td align="left"><strong>安全风险</strong></td>
+<td align="left">极易遭到中间人（MITM）的窃听、拦截和恶意篡改。</td>
+<td align="left">提供数据保密性、完整性校验及身份身份验证。</td>
+</tr>
+<tr>
+<td align="left"><strong>性能消耗</strong></td>
+<td align="left">握手极快（仅 TCP 三次握手），CPU 消耗低。</td>
+<td align="left">需进行复杂的 TLS 密码学计算，有一定性能损耗。</td>
+</tr>
+<tr>
+<td align="left"><strong>默认端口</strong></td>
+<td align="left"><code>80</code></td>
+<td align="left"><code>443</code></td>
+</tr>
+</tbody></table>
+<p>HTTPS 能够保障绝对安全的底层逻辑，在于它巧妙地结合了<strong>对称加密</strong>与<strong>非对称加密</strong>，并在两者之上引入了 <strong>CA 证书</strong>来解决终极的信任问题。</p>
+<hr>
+<h2 id="二、-信任的锚点：CA-证书签发机制"><a href="#二、-信任的锚点：CA-证书签发机制" class="headerlink" title="二、 信任的锚点：CA 证书签发机制"></a>二、 信任的锚点：CA 证书签发机制</h2><p>HTTPS 必须解决一个核心悖论：“客户端如何证明正在通信的服务器，真的是它声称的那个服务器？”<br>如果无法证明，中间人就可以伪造公钥进行拦截。为此，引入了权威的第三方公证人：<strong>CA（Certificate Authority）机构</strong>。</p>
+<h3 id="服务端申请证书的流程"><a href="#服务端申请证书的流程" class="headerlink" title="服务端申请证书的流程"></a>服务端申请证书的流程</h3><ol>
+<li><strong>打包信息</strong>：服务端将自己的域名、企业认证资质以及<strong>自身的公钥</strong>整合打包。</li>
+<li><strong>提交审核</strong>：将该数据包提交给权威 CA 机构。</li>
+<li><strong>数字签名</strong>：CA 机构审核通过后，会对数据包进行 Hash 计算得到摘要，然后<strong>使用 CA 自己的私钥对摘要进行加密</strong>，生成独一无二的“CA 签名”（即数字证书）。</li>
+<li><strong>下发证书</strong>：CA 机构将带有签名的数字证书交还给服务端。此时，服务端就拥有了合法的网络“身份证”。</li>
+</ol>
+<hr>
+<h2 id="三、-TLS-SSL-握手：混合加密的完美闭环"><a href="#三、-TLS-SSL-握手：混合加密的完美闭环" class="headerlink" title="三、 TLS&#x2F;SSL 握手：混合加密的完美闭环"></a>三、 TLS&#x2F;SSL 握手：混合加密的完美闭环</h2><p>当客户端（浏览器）尝试与配置了 HTTPS 的服务端建立连接时，双方会展开一场精密而严谨的加密协商（TLS Handshake）。</p>
+<blockquote>
+<p>💡 <strong>核心解密逻辑</strong>：由于非对称加密（如 RSA）安全性极高但加解密速度极慢，而对称加密（如 AES）速度极快但密钥容易泄露。因此，HTTPS 采用<strong>混合加密策略</strong>：利用“非对称加密”来安全地交换密钥，利用“对称加密”来进行后续的大量数据通信。</p>
+</blockquote>
+<h3 id="图解-TLS-握手与验证全流程"><a href="#图解-TLS-握手与验证全流程" class="headerlink" title="图解 TLS 握手与验证全流程"></a>图解 TLS 握手与验证全流程</h3><ul>
+<li><p><strong>Step 1：出示证件</strong><br>服务端响应客户端的连接请求，将带有 CA 签名的数字证书（内含服务端的公钥）发送给客户端。</p>
+</li>
+<li><p><strong>Step 2：核验身份（防篡改与防伪造）</strong><br>客户端操作系统或浏览器内部提前内置了全球权威 CA 机构的<strong>公钥</strong>。客户端利用该 CA 公钥对证书的签名进行解密验证：</p>
+<ul>
+<li><em>防伪造机制</em>：如果中间人尝试伪造证书，由于他没有该权威 CA 的私钥，伪造的签名绝对无法被客户端的 CA 公钥解开，验证直接失败，连接阻断。</li>
+<li><em>提取公钥</em>：解密验证成功后，客户端确认该服务器身份合法，并安全地提取出证书内部的<strong>服务端真正公钥</strong>。</li>
+</ul>
+</li>
+<li><p><strong>Step 3：生成会话密钥 (Pre-master Secret)</strong><br>客户端在本地随机生成一把用于后续全过程通信的<strong>对称密钥</strong>（会话密钥）。</p>
+</li>
+<li><p><strong>Step 4：安全投递会话密钥</strong><br>客户端使用刚刚提取的<strong>服务端公钥</strong>，将这把对称密钥加密成密文，并发送给服务端。</p>
+<ul>
+<li><em>防窃听机制</em>：此时即使中间人截获了这段密文，由于他没有服务端的私钥，根本无法解密出对称密钥。</li>
+</ul>
+</li>
+<li><p><strong>Step 5：协商完成，开始高速密文通信</strong><br>服务端收到密文后，用<strong>自己的私钥</strong>进行解密，顺利拿到客户端生成的对称密钥。至此，非对称加密的历史使命完成。双方均安全地拥有了同一把对称密钥，后续所有的业务 HTTP 请求与响应，都将使用这把对称密钥进行高速加密传输。</p>
+</li>
+</ul>
+<hr>
+<h2 id="四、-结语"><a href="#四、-结语" class="headerlink" title="四、 结语"></a>四、 结语</h2><p>纵观整个 HTTPS 的握手与通信过程，它通过 CA 证书解决了公钥分发时的“信任危机”，</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/05/23/https-tls-handshake-and-ca-certificate/" data-id="cuidRUbQnogq9IxM0rdxwAXfY" data-title="网络安全基石：深入浅出 HTTPS 核心原理与 TLS 握手机制" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTPS/" rel="tag">HTTPS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/" rel="tag">加密算法</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84/" rel="tag">安全架构</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag">计算机网络</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2026/05/23/redis-deletion-strategy-and-threading-model/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Redis 底层架构解密：从惰性删除到 6.0 多线程 I/O 模型的演进史
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2026/05/23/cpp-muduo-rpc-microservice-framework/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">从零构建 C++ 分布式 RPC 框架：基于 Muduo 的微服务与 Pub/Sub 架构实战</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86%E4%B8%8E%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">底层原理与架构设计</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E6%9C%AF%E5%BA%95%E5%B1%82%E6%B7%B1%E5%BA%A6%E5%89%96%E6%9E%90/">技术底层深度剖析</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E6%9C%AF%E5%BA%95%E5%B1%82%E6%B7%B1%E5%BA%A6%E5%89%96%E6%9E%90/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8E%E4%B8%AD%E9%97%B4%E4%BB%B6/">数据库与中间件</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/">架构设计与分布式系统</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C%E4%B8%8E%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/">网络与底层原理</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/C/" rel="tag">C++</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Elasticsearch/" rel="tag">Elasticsearch</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS/" rel="tag">HTTPS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/InnoDB/" rel="tag">InnoDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Muduo/" rel="tag">Muduo</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RPC/" rel="tag">RPC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/" rel="tag">加密算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%9F%BA%E7%A1%80%E6%9E%B6%E6%9E%84/" rel="tag">基础架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84/" rel="tag">安全架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" rel="tag">并发控制</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag">并发编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/" rel="tag">底层原理</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84/" rel="tag">数据库架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag">计算机网络</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%9D%A2%E8%AF%95%E7%AA%81%E5%87%BB/" rel="tag">面试突击</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag">高并发</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/C/" style="font-size: 20px;">C++</a> <a href="/tags/Elasticsearch/" style="font-size: 10px;">Elasticsearch</a> <a href="/tags/HTTPS/" style="font-size: 10px;">HTTPS</a> <a href="/tags/InnoDB/" style="font-size: 10px;">InnoDB</a> <a href="/tags/Muduo/" style="font-size: 10px;">Muduo</a> <a href="/tags/MySQL/" style="font-size: 20px;">MySQL</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/SQL/" style="font-size: 10px;">SQL</a> <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" style="font-size: 10px;">分布式系统</a> <a href="/tags/%E5%8A%A0%E5%AF%86%E7%AE%97%E6%B3%95/" style="font-size: 10px;">加密算法</a> <a href="/tags/%E5%9F%BA%E7%A1%80%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">基础架构</a> <a href="/tags/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">安全架构</a> <a href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">并发控制</a> <a href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并发编程</a> <a href="/tags/%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/" style="font-size: 10px;">底层原理</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 20px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">数据库架构</a> <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 20px;">架构设计</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">计算机网络</a> <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 10px;">设计模式</a> <a href="/tags/%E9%9D%A2%E8%AF%95%E7%AA%81%E5%87%BB/" style="font-size: 10px;">面试突击</a> <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">高并发</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/05/">May 2026</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/05/24/mysql-core-concepts-and-advanced-queries-guide/">夯实后端基石：MySQL 核心约束、进阶查询与底层架构</a>
+          </li>
+        
+          <li>
+            <a href="/2026/05/23/redis-deletion-strategy-and-threading-model/">Redis 底层架构解密：从惰性删除到 6.0 多线程 I/O 模型的演进史</a>
+          </li>
+        
+          <li>
+            <a href="/2026/05/23/https-tls-handshake-and-ca-certificate/">网络安全基石：深入浅出 HTTPS 核心原理与 TLS 握手机制</a>
+          </li>
+        
+          <li>
+            <a href="/2026/05/23/cpp-muduo-rpc-microservice-framework/">从零构建 C++ 分布式 RPC 框架：基于 Muduo 的微服务与 Pub/Sub 架构实战</a>
+          </li>
+        
+          <li>
+            <a href="/2026/05/22/cpp-distributed-im-microservice/">基于 C++ 构建高可用分布式 IM 微服务系统</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
