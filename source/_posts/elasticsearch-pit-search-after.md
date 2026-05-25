@@ -2,7 +2,7 @@
 title: Elasticsearch 现代深度分页：PIT 视图冻结与无状态寻址底层推导
 date: 2026-05-21 22:12:00
 tags: [Elasticsearch, 基础架构, 分布式系统]
-categories: [技术底层深度剖析]
+categories: [技术底层深度剖析, 数据库与中间件]
 ---
 
 在分布式搜索引擎的架构设计中，海量数据的“深度分页”一直是一个核心难题。传统基于 Scroll 的游标机制因需要在服务端维持高昂的状态开销，已在生产环境中被逐步废弃。现代 Elasticsearch（7.10+ 及 8.x）确立了 **Point in Time (PIT) + Search_After** 的标准解决方案。
